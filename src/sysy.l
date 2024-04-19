@@ -38,9 +38,19 @@ integer ([1-9]{digit}*)|0
 "break"         { return BREAK; }
 "return"        { return RETURN; }
 
+"+"             { return PLUS; }
+"-"             { return MINUS; }
+"!"             { return NOT; }
+
+";"             { return SEMICOLON; }
+"("             { return LPAREN; }
+")"             { return RPAREN; }
+"{"             { return LBRACE; }
+"}"             { return RBRACE; }
+
 {integer}       { yylval.int_value = atoi(yytext);   return INT_CONST; }
 {Identifier}    { yylval.str_value = new string(yytext); return IDENT; }
 
-.               { return yytext[0]; }
+.               { cerr << "Error!" << endl; return yytext[0]; }
 
 %%

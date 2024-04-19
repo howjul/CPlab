@@ -16,6 +16,8 @@ extern int yylex(void);
 
 // 终结符
 %token INT RETURN CONST VOID IF ELSE WHILE FOR BREAK CONTINUE
+%token SEMICOLON LPAREN RPAREN LBRACE RBRACE
+%token PLUS MINUS NOT
 %token <str_value> IDENT
 %token <int_value> INT_CONST
 
@@ -23,7 +25,8 @@ extern int yylex(void);
 %start CompUnit
 
 // 非终结符
-%type <ast_value> FuncDef FuncType Block Stmt Number
+%type <ast_value> FuncDef FuncType Block Stmt Number Exp PrimaryExp UnaryExp
+%type <str_value> UnaryOp
 
 
 %%
@@ -36,7 +39,7 @@ CompUnit
     ;
 
 FuncDef
-    : FuncType IDENT '(' ')' Block { 
+    : FuncType IDENT LPAREN RPAREN Block { 
       auto ast = new FuncDefAST();
       ast->func_type = unique_ptr<BaseAST>($1);
       ast->ident = unique_ptr<string>($2);
@@ -54,7 +57,7 @@ FuncType
     ;
 
 Block
-    : '{' Stmt '}' {
+    : LBRACE Stmt RBRACE {
       auto ast = new BlockAST();
       ast->stmt = unique_ptr<BaseAST>($2);
       $$ = ast;
@@ -62,11 +65,53 @@ Block
     ;
 
 Stmt
-  : RETURN Number ';' {
+  : RETURN Exp SEMICOLON {
     auto ast = new StmtAST();
-    ast->Number = unique_ptr<BaseAST>($2);
+    ast->exp_ast = unique_ptr<BaseAST>($2);
     $$ = ast;
   }
+  ;
+
+Exp
+  : UnaryExp { 
+    auto ast = new ExpAST();
+    ast->unary_exp_ast = unique_ptr<BaseAST>($1); 
+    $$ = ast;
+  }
+  ;
+
+PrimaryExp
+  : LPAREN Exp RPAREN {
+    auto ast = new PrimaryExpAST();
+    ast->type = PrimaryExpType::Exp;
+    ast->primary_exp_ast = unique_ptr<BaseAST>($2);
+    $$ = ast;
+  } | Number {
+    auto ast = new PrimaryExpAST();
+    ast->type = PrimaryExpType::Number;
+    ast->primary_exp_ast = unique_ptr<BaseAST>($1);
+    $$ = ast;
+  }
+  ;
+
+UnaryExp
+  : PrimaryExp { 
+    auto ast = new UnaryExpAST();
+    ast->type = UnaryExpType::PrimaryExp;
+    ast->primary_exp_ast = unique_ptr<BaseAST>($1);
+    $$ = ast;
+  } | UnaryOp UnaryExp {
+    auto ast = new UnaryExpAST();
+    ast->type = UnaryExpType::UnaryOpandUnaryExp;
+    ast->unary_op = unique_ptr<string>($1);
+    ast->unary_exp_ast = unique_ptr<BaseAST>($2);
+    $$ = ast;
+  }
+
+UnaryOp
+  : PLUS { $$ = new string("+"); }
+  | MINUS { $$ = new string("-"); }
+  | NOT { $$ = new string("!"); }
   ;
 
 Number
@@ -76,6 +121,7 @@ Number
     $$ = ast;
   }
   ;
+
 
 %%
 

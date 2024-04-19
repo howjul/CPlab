@@ -7,6 +7,9 @@
 
 using namespace std;
 
+enum PrimaryExpType { Exp, Number };
+enum UnaryExpType { PrimaryExp, UnaryOpandUnaryExp };
+
 // 所有 AST 的基类
 class BaseAST {
  public:
@@ -62,12 +65,12 @@ class BlockAST : public BaseAST {
 
 class StmtAST : public BaseAST {
  public:
-  std::unique_ptr<BaseAST> Number;
+  std::unique_ptr<BaseAST> exp_ast;
 
   void dump() const override{
     cout << "Stmt { ";
-    Number->dump();
-    cout << " }";
+    exp_ast->dump();
+    cout << "; }";
   }
 };
 
@@ -76,6 +79,58 @@ class NumberAST : public BaseAST {
   int val;
 
   void dump() const override{
-    cout << "Number { " << val << " }";
+    // cout << "Number { " << val << " }";
+    cout << val;
   }
+};
+
+class ExpAST: public BaseAST {
+  public:
+    std::unique_ptr<BaseAST> unary_exp_ast;
+  
+    void dump() const override{
+      cout << "Exp { ";
+      unary_exp_ast->dump();
+      cout << " }";
+    }
+};
+
+class PrimaryExpAST: public BaseAST {
+  public:
+    PrimaryExpType type;
+    std::unique_ptr<BaseAST> primary_exp_ast;
+  
+    void dump() const override{
+      if (type == PrimaryExpType::Exp) {
+        cout << "PrimaryExp { (";
+        primary_exp_ast->dump();
+        cout << ") }";
+      } 
+      if (type == PrimaryExpType::Number){
+        cout << "PrimaryExp { ";
+        primary_exp_ast->dump();
+        cout << " }";
+      }
+    }
+};
+
+class UnaryExpAST: public BaseAST {
+  public:
+    UnaryExpType type;
+    std::unique_ptr<BaseAST> primary_exp_ast;
+    std::unique_ptr<string> unary_op;
+    std::unique_ptr<BaseAST> unary_exp_ast;
+  
+    void dump() const override{
+      if (type == UnaryExpType::PrimaryExp) {
+        cout << "UnaryExp { ";
+        primary_exp_ast->dump();
+        cout << " }";
+      } 
+      if (type == UnaryExpType::UnaryOpandUnaryExp){
+        cout << "UnaryExp { " << *unary_op << " ";
+        unary_exp_ast->dump();
+        cout << " }";
+      }
+    }
 };
