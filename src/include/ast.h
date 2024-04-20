@@ -17,6 +17,9 @@ enum EqExpType { RelExp, EqExpEqOpRelExp };
 enum LAndExpType { EqExp, LAndExpAndOpEqExp };
 enum LOrExpType { LAndExp, LOrExpOrOpLAndExp };
 enum BlockItemType { Decl, Stmt };
+enum DeclType { ConstDecl, VarDecl };
+enum VarDefType { Ident, IdentAssignInitVal };
+enum StmtType { LValAssignExp, Return };
 
 
 // 所有 AST 的基类
@@ -74,12 +77,23 @@ class BlockAST : public BaseAST {
 
 class StmtAST : public BaseAST {
  public:
+  StmtType type;
   std::unique_ptr<BaseAST> exp_ast;
+  std::unique_ptr<BaseAST> lval_ast;
 
   void dump() const override{
-    cout << "Stmt { ";
-    exp_ast->dump();
-    cout << "; }";
+    if (type == StmtType::LValAssignExp){
+      cout << "Stmt { ";
+      lval_ast->dump();
+      cout << " = ";
+      exp_ast->dump();
+      cout << "; }";
+    }
+    if (type == StmtType::Return){
+      cout << "Stmt { return ";
+      exp_ast->dump();
+      cout << "; }";
+    }
   }
 };
 
@@ -289,11 +303,11 @@ class LOrExpAST: public BaseAST {
 
 class DeclAST : public BaseAST {
  public:
-  std::unique_ptr<BaseAST> const_decl_ast;
+  std::unique_ptr<BaseAST> decl_ast;
 
   void dump() const override{
     cout << "Decl { ";
-    const_decl_ast->dump();
+    decl_ast->dump();
     cout << " }";
   }
 };
@@ -381,4 +395,57 @@ class LValAST : public BaseAST {
     void dump() const override{
       cout << "LVal { " << *ident << " }";
     }
+};
+
+class VarDeclAST : public BaseAST {
+ public:
+  std::vector<BaseAST*> var_def_list;
+  std::unique_ptr<BaseAST> var_def_ast;
+  std::unique_ptr<BaseAST> btype_ast;
+
+  void dump() const override{
+    cout << "VarDecl { ";
+    btype_ast->dump();
+    var_def_ast->dump();
+    cout << " ";
+    for (auto var_def : var_def_list) {
+      cout << ", ";
+      var_def->dump();
+    }
+    cout << " ;";
+    cout << " }";
+  }
+};
+
+class VarDefAST : public BaseAST {
+ public:
+  VarDefType type;
+  std::unique_ptr<string> ident;
+  std::unique_ptr<BaseAST> init_val_ast;
+
+  void dump() const override{
+    if (type == VarDefType::Ident){
+      cout << "VarDef { ";
+      cout << *ident;
+      cout << " }";
+    }
+    if (type == VarDefType::IdentAssignInitVal){
+      cout << "VarDef { ";
+      cout << *ident;
+      cout << " = ";
+      init_val_ast->dump();
+      cout << " }";
+    }
+  }
+};
+
+class InitValAST : public BaseAST {
+ public:
+  std::unique_ptr<BaseAST> exp_ast;
+
+  void dump() const override{
+    cout << "InitVal { ";
+    exp_ast->dump();
+    cout << " }";
+  }
 };
