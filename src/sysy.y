@@ -94,6 +94,19 @@ Stmt
     ast->type = StmtType::Return;
     ast->exp_ast = unique_ptr<BaseAST>($2);
     $$ = ast;
+  } | IF LPAREN Exp RPAREN Stmt {
+    auto ast = new StmtAST();
+    ast->type = StmtType::OnlyIf;
+    ast->exp_ast = unique_ptr<BaseAST>($3);
+    ast->stmt_ast = unique_ptr<BaseAST>($5);
+    $$ = ast;
+  } | IF LPAREN Exp RPAREN Stmt ELSE Stmt {
+    auto ast = new StmtAST();
+    ast->type = StmtType::IfElse;
+    ast->exp_ast = unique_ptr<BaseAST>($3);
+    ast->stmt_ast = unique_ptr<BaseAST>($5);
+    ast->else_stmt_ast = unique_ptr<BaseAST>($7);
+    $$ = ast;
   }
   ;
 
