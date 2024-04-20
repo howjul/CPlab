@@ -4,10 +4,11 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <vector>
 
 using namespace std;
 
-enum PrimaryExpType { Exp, Number };
+enum PrimaryExpType { Exp, Number, LVal };
 enum UnaryExpType { PrimaryExp, UnaryOpandUnaryExp };
 enum MulExpType { UnaryExp, MulExpMulOpUnaryExp };
 enum AddExpType { MulExp, AddExpAddOpMulExp };
@@ -15,6 +16,8 @@ enum RelExpType { AddExp, RelExpRelOpAddExp };
 enum EqExpType { RelExp, EqExpEqOpRelExp };
 enum LAndExpType { EqExp, LAndExpAndOpEqExp };
 enum LOrExpType { LAndExp, LOrExpOrOpLAndExp };
+enum BlockItemType { Decl, Stmt };
+
 
 // 所有 AST 的基类
 class BaseAST {
@@ -60,11 +63,11 @@ class FuncTypeAST : public BaseAST {
 
 class BlockAST : public BaseAST {
  public:
-  std::unique_ptr<BaseAST> stmt;
+  std::vector<BaseAST*> block_item_list;
 
   void dump() const override{
     cout << "Block { ";
-    stmt->dump();
+    for (auto block_item : block_item_list) block_item->dump();
     cout << " }";
   }
 };
@@ -113,6 +116,11 @@ class PrimaryExpAST: public BaseAST {
         cout << ") }";
       } 
       if (type == PrimaryExpType::Number){
+        cout << "PrimaryExp { ";
+        primary_exp_ast->dump();
+        cout << " }";
+      }
+      if (type == PrimaryExpType::LVal){
         cout << "PrimaryExp { ";
         primary_exp_ast->dump();
         cout << " }";
@@ -276,5 +284,101 @@ class LOrExpAST: public BaseAST {
         land_exp_ast->dump();
         cout << " }";
       }
+    }
+};
+
+class DeclAST : public BaseAST {
+ public:
+  std::unique_ptr<BaseAST> const_decl_ast;
+
+  void dump() const override{
+    cout << "Decl { ";
+    const_decl_ast->dump();
+    cout << " }";
+  }
+};
+
+class ConstDeclAST : public BaseAST {
+ public:
+  std::vector<BaseAST*> const_def_list;
+  std::unique_ptr<BaseAST> const_def_ast;
+  std::unique_ptr<BaseAST> btype_ast;
+
+  void dump() const override{
+    cout << "ConstDecl { const ";
+    btype_ast->dump();
+    const_def_ast->dump();
+    cout << " ";
+    for (auto const_def : const_def_list) {
+      cout << ", ";
+      const_def->dump();
+    }
+    cout << " ;";
+    cout << " }";
+  }
+};
+
+class BTypeAST : public BaseAST {
+ public:
+  std::unique_ptr<string> btype;
+
+  void dump() const override{
+    cout << "Btype { " << *btype << " }";
+  }
+};
+
+class ConstDefAST : public BaseAST {
+ public:
+  std::unique_ptr<string> ident;
+  std::unique_ptr<BaseAST> const_init_val_ast;
+
+  void dump() const override{
+    cout << "ConstDef { ";
+    cout << *ident << " = ";
+    const_init_val_ast->dump();
+    cout << " }";
+  }
+};
+
+class ConstInitValAST : public BaseAST {
+ public:
+  std::unique_ptr<BaseAST> const_exp_ast;
+
+  void dump() const override{
+    cout << "ConstInitVal { ";
+    const_exp_ast->dump();
+    cout << " }";
+  }
+};
+
+class ConstExpAST : public BaseAST{
+  public:
+    std::unique_ptr<BaseAST> exp_ast;
+
+  void dump() const override{
+    cout << "ConstExp { ";
+    exp_ast->dump();
+    cout << " }";
+  }
+};
+
+class BlockItemAST : public BaseAST{
+  public:
+    std::unique_ptr<BaseAST> block_item_ast;
+    BlockItemType type;
+
+    void dump() const override{
+      cout << "BlockItem { ";
+      block_item_ast->dump();
+      cout << " }";
+    }
+};
+
+class LValAST : public BaseAST {
+  public:
+    std::unique_ptr<string> ident;
+
+    void dump() const override{
+      cout << "LVal { " << *ident << " }";
     }
 };

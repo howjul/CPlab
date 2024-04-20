@@ -44,6 +44,7 @@ integer ([1-9]{digit}*)|0
 "*"             { return TIMES; }
 "/"             { return DIVIDE; }
 "%"             { return MOD; }
+"="             { return ASSIGN; }
 "=="            { return EQ; }
 "!="            { return NE; }
 "<"             { return LT; }
@@ -53,6 +54,7 @@ integer ([1-9]{digit}*)|0
 "&&"            { return AND; }
 "||"            { return OR; }
 
+","             { return COMMA; }
 ";"             { return SEMICOLON; }
 "("             { return LPAREN; }
 ")"             { return RPAREN; }

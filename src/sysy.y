@@ -1,5 +1,6 @@
 %{
 #include <stdio.h>
+#include <vector>
 #include "include/ast.h"
 void yyerror(std::unique_ptr<BaseAST> &ast, const char *s);
 extern int yylex(void);
@@ -12,12 +13,13 @@ extern int yylex(void);
     int int_value;
     std::string* str_value;
     BaseAST *ast_value;
+    std::vector<BaseAST*>* ast_list;
 }
 
 // 终结符
 %token INT RETURN CONST VOID IF ELSE WHILE FOR BREAK CONTINUE
-%token SEMICOLON LPAREN RPAREN LBRACE RBRACE
-%token PLUS MINUS NOT TIMES DIVIDE MOD EQ NE GT GE LT LE AND OR
+%token SEMICOLON LPAREN RPAREN LBRACE RBRACE COMMA
+%token PLUS MINUS NOT TIMES DIVIDE MOD EQ NE GT GE LT LE AND OR ASSIGN
 %token <str_value> IDENT
 %token <int_value> INT_CONST
 
@@ -25,7 +27,8 @@ extern int yylex(void);
 %start CompUnit
 
 // 非终结符
-%type <ast_value> FuncDef FuncType Block Stmt Number Exp PrimaryExp UnaryExp AddExp MulExp LOrExp LAndExp EqExp RelExp
+%type <ast_value> FuncDef FuncType Block Stmt Number Exp PrimaryExp UnaryExp AddExp MulExp LOrExp LAndExp EqExp RelExp Decl ConstDecl BType ConstDef ConstInitVal ConstExp BlockItem LVal
+%type <ast_list> ConstDefList BlockItemList
 %type <str_value> UnaryOp MulOp AddOp RelOp EqOp
 
 
@@ -57,9 +60,9 @@ FuncType
     ;
 
 Block
-    : LBRACE Stmt RBRACE {
+    : LBRACE BlockItemList RBRACE {
       auto ast = new BlockAST();
-      ast->stmt = unique_ptr<BaseAST>($2);
+      ast->block_item_list = *($2);;
       $$ = ast;
     }
     ;
@@ -85,6 +88,11 @@ PrimaryExp
     auto ast = new PrimaryExpAST();
     ast->type = PrimaryExpType::Exp;
     ast->primary_exp_ast = unique_ptr<BaseAST>($2);
+    $$ = ast;
+  } | LVal {
+    auto ast = new PrimaryExpAST();
+    ast->type = PrimaryExpType::LVal;
+    ast->primary_exp_ast = unique_ptr<BaseAST>($1);
     $$ = ast;
   } | Number {
     auto ast = new PrimaryExpAST();
@@ -240,6 +248,90 @@ LOrExp
   }
   ;
 
+Decl
+  : ConstDecl { 
+    auto ast = new DeclAST();
+    ast->const_decl_ast = unique_ptr<BaseAST>($1);
+    $$ = ast;
+  }
+
+ConstDefList
+  : {
+    auto const_def_list = new std::vector<BaseAST*>;
+    $$ = const_def_list;
+  } | ConstDefList COMMA ConstDef {
+    auto const_def_list = $1;
+    const_def_list->push_back($3);
+    $$ = const_def_list;
+  }
+
+ConstDecl
+  : CONST BType ConstDef ConstDefList SEMICOLON {
+    auto ast = new ConstDeclAST();
+    ast->btype_ast = unique_ptr<BaseAST>($2);
+    ast->const_def_ast = unique_ptr<BaseAST>($3);
+    ast->const_def_list = *($4);
+    $$ = ast;
+  }
+
+BType
+  : INT { 
+    auto ast = new BTypeAST();
+    ast->btype = std::make_unique<string>("int");
+    $$ = ast;
+  }
+  ;
+
+ConstDef
+  : IDENT ASSIGN ConstInitVal {
+    auto ast = new ConstDefAST();
+    ast->ident = unique_ptr<string>($1);
+    ast->const_init_val_ast = unique_ptr<BaseAST>($3);
+    $$ = ast;
+  }
+
+ConstInitVal
+  : ConstExp {
+    auto ast = new ConstInitValAST();
+    ast->const_exp_ast = unique_ptr<BaseAST>($1);
+    $$ = ast;
+  }
+
+BlockItemList
+  : {
+    auto block_item_list = new vector<BaseAST*>;
+    $$ = block_item_list;
+  } | BlockItemList BlockItem {
+    auto block_item_list = $1;
+    block_item_list->push_back($2);
+    $$ = block_item_list;
+  }
+
+BlockItem
+  : Decl { 
+    auto ast = new BlockItemAST();
+    ast->block_item_ast = unique_ptr<BaseAST>($1);
+    $$ = ast;
+  } | Stmt {
+    auto ast = new BlockItemAST();
+    ast->block_item_ast = unique_ptr<BaseAST>($1);
+    $$ = ast;
+  }
+  ;
+
+LVal
+  : IDENT {
+    auto ast = new LValAST();
+    ast->ident = unique_ptr<string>($1);
+    $$ = ast;
+  }
+
+ConstExp
+  : Exp {
+    auto ast = new ConstExpAST();
+    ast->exp_ast = unique_ptr<BaseAST>($1);
+    $$ = ast;
+  }
 
 %%
 
