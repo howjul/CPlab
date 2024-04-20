@@ -11,6 +11,10 @@ enum PrimaryExpType { Exp, Number };
 enum UnaryExpType { PrimaryExp, UnaryOpandUnaryExp };
 enum MulExpType { UnaryExp, MulExpMulOpUnaryExp };
 enum AddExpType { MulExp, AddExpAddOpMulExp };
+enum RelExpType { AddExp, RelExpRelOpAddExp };
+enum EqExpType { RelExp, EqExpEqOpRelExp };
+enum LAndExpType { EqExp, LAndExpAndOpEqExp };
+enum LOrExpType { LAndExp, LOrExpOrOpLAndExp };
 
 // 所有 AST 的基类
 class BaseAST {
@@ -88,11 +92,11 @@ class NumberAST : public BaseAST {
 
 class ExpAST: public BaseAST {
   public:
-    std::unique_ptr<BaseAST> add_exp_ast;
+    std::unique_ptr<BaseAST> lor_exp_ast;
   
     void dump() const override{
       cout << "Exp { ";
-      add_exp_ast->dump();
+      lor_exp_ast->dump();
       cout << " }";
     }
 };
@@ -178,6 +182,98 @@ class MulExpAST: public BaseAST {
         mul_exp_ast->dump();
         cout << " " << *mul_op << " ";
         unary_exp_ast->dump();
+        cout << " }";
+      }
+    }
+};
+
+class RelExpAST: public BaseAST {
+  public:
+    RelExpType type;
+    std::unique_ptr<BaseAST> add_exp_ast;
+    std::unique_ptr<string> rel_op;
+    std::unique_ptr<BaseAST> rel_exp_ast;
+
+    void dump() const override{
+      if (type == RelExpType::AddExp) {
+        cout << "RelExp { ";
+        add_exp_ast->dump();
+        cout << " }";
+      } 
+      if (type == RelExpType::RelExpRelOpAddExp){
+        cout << "RelExp { ";
+        rel_exp_ast->dump();
+        cout << " " << *rel_op << " ";
+        add_exp_ast->dump();
+        cout << " }";
+      }
+    }
+};
+
+class EqExpAST: public BaseAST {
+  public:
+    EqExpType type;
+    std::unique_ptr<BaseAST> rel_exp_ast;
+    std::unique_ptr<string> eq_op;
+    std::unique_ptr<BaseAST> eq_exp_ast;
+
+    void dump() const override{
+      if (type == EqExpType::RelExp) {
+        cout << "EqExp { ";
+        rel_exp_ast->dump();
+        cout << " }";
+      } 
+      if (type == EqExpType::EqExpEqOpRelExp){
+        cout << "EqExp { ";
+        eq_exp_ast->dump();
+        cout << " " << *eq_op << " ";
+        rel_exp_ast->dump();
+        cout << " }";
+      }
+    }
+};
+
+class LAndExpAST: public BaseAST {
+  public:
+    LAndExpType type;
+    std::unique_ptr<BaseAST> eq_exp_ast;
+    std::unique_ptr<string> and_op = std::make_unique<string>("&&");
+    std::unique_ptr<BaseAST> land_exp_ast;
+
+    void dump() const override{
+      if (type == LAndExpType::EqExp) {
+        cout << "LAndExp { ";
+        eq_exp_ast->dump();
+        cout << " }";
+      } 
+      if (type == LAndExpType::LAndExpAndOpEqExp){
+        cout << "LAndExp { ";
+        land_exp_ast->dump();
+        cout << " " << *and_op << " ";
+        eq_exp_ast->dump();
+        cout << " }";
+      }
+    }
+};
+
+class LOrExpAST: public BaseAST {
+  public:
+    LOrExpType type;
+    std::unique_ptr<BaseAST> land_exp_ast;
+    std::unique_ptr<string> or_op = std::make_unique<string>("||");
+    std::unique_ptr<BaseAST> lor_exp_ast;
+
+    void dump() const override{
+      if (type == LOrExpType::LAndExp) {
+        cout << "LOrExp { ";
+        land_exp_ast->dump();
+        cout << " }";
+      } 
+      if (type == LOrExpType::LOrExpOrOpLAndExp){
+        cout << "LOrExp { ";
+        lor_exp_ast->dump();
+        cout << " " << *or_op << " ";
+        land_exp_ast->dump();
         cout << " }";
       }
     }

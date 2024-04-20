@@ -46,6 +46,12 @@ integer ([1-9]{digit}*)|0
 "%"             { return MOD; }
 "=="            { return EQ; }
 "!="            { return NE; }
+"<"             { return LT; }
+"<="            { return LE; }
+">"             { return GT; }
+">="            { return GE; }
+"&&"            { return AND; }
+"||"            { return OR; }
 
 ";"             { return SEMICOLON; }
 "("             { return LPAREN; }

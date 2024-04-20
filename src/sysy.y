@@ -17,7 +17,7 @@ extern int yylex(void);
 // 终结符
 %token INT RETURN CONST VOID IF ELSE WHILE FOR BREAK CONTINUE
 %token SEMICOLON LPAREN RPAREN LBRACE RBRACE
-%token PLUS MINUS NOT TIMES DIVIDE MOD EQ NE
+%token PLUS MINUS NOT TIMES DIVIDE MOD EQ NE GT GE LT LE AND OR
 %token <str_value> IDENT
 %token <int_value> INT_CONST
 
@@ -25,8 +25,8 @@ extern int yylex(void);
 %start CompUnit
 
 // 非终结符
-%type <ast_value> FuncDef FuncType Block Stmt Number Exp PrimaryExp UnaryExp AddExp MulExp
-%type <str_value> UnaryOp MulOp AddOp
+%type <ast_value> FuncDef FuncType Block Stmt Number Exp PrimaryExp UnaryExp AddExp MulExp LOrExp LAndExp EqExp RelExp
+%type <str_value> UnaryOp MulOp AddOp RelOp EqOp
 
 
 %%
@@ -73,9 +73,9 @@ Stmt
   ;
 
 Exp
-  : AddExp { 
+  : LOrExp { 
     auto ast = new ExpAST();
-    ast->add_exp_ast = unique_ptr<BaseAST>($1); 
+    ast->lor_exp_ast = unique_ptr<BaseAST>($1); 
     $$ = ast;
   }
   ;
@@ -163,6 +163,83 @@ AddOp
   : PLUS { $$ = new string("+"); }
   | MINUS { $$ = new string("-"); }
   ;
+
+RelExp
+  : AddExp { 
+    auto ast = new RelExpAST();
+    ast->type = RelExpType::AddExp;
+    ast->add_exp_ast = unique_ptr<BaseAST>($1);
+    $$ = ast;
+  } | RelExp RelOp AddExp {
+    auto ast = new RelExpAST();
+    ast->type = RelExpType::RelExpRelOpAddExp;
+    ast->rel_exp_ast = unique_ptr<BaseAST>($1);
+    ast->rel_op = unique_ptr<string>($2);
+    ast->add_exp_ast = unique_ptr<BaseAST>($3);
+    $$ = ast;
+  }
+  ;
+
+RelOp
+  : EQ { $$ = new string("=="); }
+  | NE { $$ = new string("!="); }
+  | GT { $$ = new string(">"); }
+  | GE { $$ = new string(">="); }
+  | LT { $$ = new string("<"); }
+  | LE { $$ = new string("<="); }
+  ;
+
+EqExp
+  : RelExp { 
+    auto ast = new EqExpAST();
+    ast->type = EqExpType::RelExp;
+    ast->rel_exp_ast = unique_ptr<BaseAST>($1);
+    $$ = ast;
+  } | EqExp EqOp RelExp {
+    auto ast = new EqExpAST();
+    ast->type = EqExpType::EqExpEqOpRelExp;
+    ast->eq_exp_ast = unique_ptr<BaseAST>($1);
+    ast->eq_op = unique_ptr<string>($2);
+    ast->rel_exp_ast = unique_ptr<BaseAST>($3);
+    $$ = ast;
+  }
+  ;
+
+EqOp
+  : EQ { $$ = new string("=="); }
+  | NE { $$ = new string("!="); }
+  ;
+
+LAndExp
+  : EqExp { 
+    auto ast = new LAndExpAST();
+    ast->type = LAndExpType::EqExp;
+    ast->eq_exp_ast = unique_ptr<BaseAST>($1);
+    $$ = ast;
+  } | LAndExp AND EqExp {
+    auto ast = new LAndExpAST();
+    ast->type = LAndExpType::LAndExpAndOpEqExp;
+    ast->land_exp_ast = unique_ptr<BaseAST>($1);
+    ast->eq_exp_ast = unique_ptr<BaseAST>($3);
+    $$ = ast;
+  }
+  ;
+
+LOrExp
+  : LAndExp { 
+    auto ast = new LOrExpAST();
+    ast->type = LOrExpType::LAndExp;
+    ast->land_exp_ast = unique_ptr<BaseAST>($1);
+    $$ = ast;
+  } | LOrExp OR LAndExp {
+    auto ast = new LOrExpAST();
+    ast->type = LOrExpType::LOrExpOrOpLAndExp;
+    ast->lor_exp_ast = unique_ptr<BaseAST>($1);
+    ast->land_exp_ast = unique_ptr<BaseAST>($3);
+    $$ = ast;
+  }
+  ;
+
 
 %%
 
