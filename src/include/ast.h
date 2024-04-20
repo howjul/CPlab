@@ -19,7 +19,7 @@ enum LOrExpType { LAndExp, LOrExpOrOpLAndExp };
 enum BlockItemType { Decl, Stmt };
 enum DeclType { ConstDecl, VarDecl };
 enum VarDefType { Ident, IdentAssignInitVal };
-enum StmtType { LValAssignExp, None, SingleExp, Block, Return, OnlyReturn, OnlyIf, IfElse, While };
+enum StmtType { LValAssignExp, None, SingleExp, Block, Return, OnlyReturn, OnlyIf, IfElse, While, Break, Continue };
 
 
 // 所有 AST 的基类
@@ -128,6 +128,19 @@ class StmtAST : public BaseAST {
       cout << " } else { ";
       else_stmt_ast->dump();
       cout << " }";
+    }
+    if (type == StmtType::While){
+      cout << "Stmt { while ( ";
+      exp_ast->dump();
+      cout << " ) { ";
+      stmt_ast->dump();
+      cout << " }";
+    }
+    if (type == StmtType::Break){
+      cout << "Stmt { break; }";
+    }
+    if (type == StmtType::Continue){
+      cout << "Stmt { continue; }";
     }
   }
 };

@@ -107,6 +107,20 @@ Stmt
     ast->stmt_ast = unique_ptr<BaseAST>($5);
     ast->else_stmt_ast = unique_ptr<BaseAST>($7);
     $$ = ast;
+  } | WHILE LPAREN Exp RPAREN Stmt {
+    auto ast = new StmtAST();
+    ast->type = StmtType::While;
+    ast->exp_ast = unique_ptr<BaseAST>($3);
+    ast->stmt_ast = unique_ptr<BaseAST>($5);
+    $$ = ast;
+  } | BREAK SEMICOLON {
+    auto ast = new StmtAST();
+    ast->type = StmtType::Break;
+    $$ = ast;
+  } | CONTINUE SEMICOLON {
+    auto ast = new StmtAST();
+    ast->type = StmtType::Continue;
+    $$ = ast;
   }
   ;
 
