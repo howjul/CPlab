@@ -12,40 +12,61 @@ extern int yylex(void);
 %union {
     int int_value;
     std::string* str_value;
-    BaseAST *ast_value;
+    BaseAST* ast_value;
     std::vector<BaseAST*>* ast_list;
 }
 
 // 终结符
-%token INT RETURN CONST VOID IF ELSE WHILE FOR BREAK CONTINUE
+%token INT RETURN CONST VOID IF ELSE WHILE BREAK CONTINUE
 %token SEMICOLON LPAREN RPAREN LBRACE RBRACE COMMA
 %token PLUS MINUS NOT TIMES DIVIDE MOD EQ NE GT GE LT LE AND OR ASSIGN
 %token <str_value> IDENT
 %token <int_value> INT_CONST
 
 // 开始符
-%start CompUnit
+/* %start CompUnit */
 
 // 非终结符
-%type <ast_value> FuncDef FuncType Block Stmt Number Exp PrimaryExp UnaryExp AddExp MulExp LOrExp LAndExp EqExp RelExp Decl ConstDecl BType ConstDef ConstInitVal ConstExp BlockItem LVal VarDecl VarDef InitVal
-%type <ast_list> ConstDefList BlockItemList VarDefList
+%type <ast_value> FuncDef FuncType Block Stmt Number Exp PrimaryExp UnaryExp AddExp MulExp LOrExp LAndExp EqExp RelExp Decl ConstDecl BType ConstDef ConstInitVal ConstExp BlockItem LVal VarDecl VarDef InitVal FuncFParams FuncFParam CompUnit CompUnitList
+%type <ast_list> ConstDefList BlockItemList VarDefList FuncFParamList FuncRParams
 %type <str_value> UnaryOp MulOp AddOp RelOp EqOp
 
 %%
 CompUnit
-    : FuncDef { 
-      auto comp_unit = std::make_unique<CompUnitAST>(); // 创建一个CompUnitAST对象
-      comp_unit->func_def = unique_ptr<BaseAST>($1); // 将FuncDefAST对象赋值给CompUnitAST对象
-      ast = std::move(comp_unit); // 将CompUnitAST对象赋值给ast
+  : CompUnitList {
+    auto comp_unit = make_unique<startAST>();
+    comp_unit->comp_unit_ast = unique_ptr<BaseAST>($1);
+    ast = std::move(comp_unit);
+  }
+  ;
+
+CompUnitList
+    : FuncDef {
+      auto compunit = new CompUnitAST();
+      compunit->func_def_list.push_back($1);
+      $$ = compunit;
+    } | CompUnitList FuncDef { 
+      auto compunit = (CompUnitAST*)$1;
+      compunit->func_def_list.push_back($2);
+      $$ = compunit;
     }
     ;
 
 FuncDef
     : FuncType IDENT LPAREN RPAREN Block { 
       auto ast = new FuncDefAST();
+      ast->type = FuncDefType::NoParams;
       ast->func_type = unique_ptr<BaseAST>($1);
       ast->ident = unique_ptr<string>($2);
       ast->block = unique_ptr<BaseAST>($5);
+      $$ = ast;
+    } | FuncType IDENT LPAREN FuncFParams RPAREN Block{
+      auto ast = new FuncDefAST();
+      ast->type = FuncDefType::WithParams;
+      ast->func_type = unique_ptr<BaseAST>($1);
+      ast->ident = unique_ptr<string>($2);
+      ast->funcfparams = unique_ptr<BaseAST>($4);
+      ast->block = unique_ptr<BaseAST>($6);
       $$ = ast;
     }
     ;
@@ -53,10 +74,40 @@ FuncDef
 FuncType
     : INT { 
       auto ast = new FuncTypeAST();
-      ast->type = "int";
+      ast->type = FuncTypeType::Int;
+      $$ = ast;
+    } | VOID {
+      auto ast = new FuncTypeAST();
+      ast->type = FuncTypeType::Void;
       $$ = ast;
     }
     ;
+
+FuncFParams
+    : FuncFParam FuncFParamList {
+      auto ast = new FuncFParamsAST();
+      ast->funcfparam_ast = unique_ptr<BaseAST>($1);
+      ast->funcfparam_list = *($2);
+      $$ = ast;
+    }
+
+FuncFParamList
+    : {
+      auto funcfparam_list = new std::vector<BaseAST*>;
+      $$ = funcfparam_list;
+    } | FuncFParamList COMMA FuncFParam {
+      auto funcfparam_list = $1;
+      funcfparam_list->push_back($3);
+      $$ = funcfparam_list;
+    }
+
+FuncFParam
+    : BType IDENT {
+      auto ast = new FuncFParamAST();
+      ast->btype_ast = unique_ptr<BaseAST>($1);
+      ast->ident = unique_ptr<string>($2);
+      $$ = ast;
+    }
 
 Block
     : LBRACE BlockItemList RBRACE {
@@ -85,15 +136,6 @@ Stmt
     ast->type = StmtType::Block;
     ast->block_ast = unique_ptr<BaseAST>($1);
     $$ = ast;
-  } | RETURN SEMICOLON {
-    auto ast = new StmtAST();
-    ast->type = StmtType::OnlyReturn;
-    $$ = ast;
-  } | RETURN Exp SEMICOLON {
-    auto ast = new StmtAST();
-    ast->type = StmtType::Return;
-    ast->exp_ast = unique_ptr<BaseAST>($2);
-    $$ = ast;
   } | IF LPAREN Exp RPAREN Stmt {
     auto ast = new StmtAST();
     ast->type = StmtType::OnlyIf;
@@ -120,6 +162,15 @@ Stmt
   } | CONTINUE SEMICOLON {
     auto ast = new StmtAST();
     ast->type = StmtType::Continue;
+    $$ = ast;
+  } | RETURN SEMICOLON {
+    auto ast = new StmtAST();
+    ast->type = StmtType::OnlyReturn;
+    $$ = ast;
+  } | RETURN Exp SEMICOLON {
+    auto ast = new StmtAST();
+    ast->type = StmtType::Return;
+    ast->exp_ast = unique_ptr<BaseAST>($2);
     $$ = ast;
   }
   ;
@@ -163,7 +214,30 @@ UnaryExp
     ast->unary_op = unique_ptr<string>($1);
     ast->unary_exp_ast = unique_ptr<BaseAST>($2);
     $$ = ast;
+  } | IDENT LPAREN FuncRParams RPAREN {
+    auto ast = new UnaryExpAST();
+    ast->type = UnaryExpType::IdentFuncRParams;
+    ast->ident = unique_ptr<string>($1);
+    ast->funcrparams = *($3);
+    $$ = ast;
+  } | IDENT LPAREN RPAREN {
+    auto ast = new UnaryExpAST();
+    ast->type = UnaryExpType::OnlyIdent;
+    ast->ident = unique_ptr<string>($1);
+    $$ = ast;
   }
+
+FuncRParams
+  : Exp {
+    auto funcrparams = new std::vector<BaseAST*>;
+    funcrparams->push_back($1);
+    $$ = funcrparams;
+  } | FuncRParams COMMA Exp {
+    auto funcrparams = $1;
+    funcrparams->push_back($3);
+    $$ = funcrparams;
+  }
+
 
 UnaryOp
   : PLUS { $$ = new string("+"); }

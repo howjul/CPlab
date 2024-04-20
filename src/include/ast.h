@@ -9,7 +9,7 @@
 using namespace std;
 
 enum PrimaryExpType { Exp, Number, LVal };
-enum UnaryExpType { PrimaryExp, UnaryOpandUnaryExp };
+enum UnaryExpType { PrimaryExp, UnaryOpandUnaryExp, IdentFuncRParams, OnlyIdent };
 enum MulExpType { UnaryExp, MulExpMulOpUnaryExp };
 enum AddExpType { MulExp, AddExpAddOpMulExp };
 enum RelExpType { AddExp, RelExpRelOpAddExp };
@@ -20,6 +20,9 @@ enum BlockItemType { Decl, Stmt };
 enum DeclType { ConstDecl, VarDecl };
 enum VarDefType { Ident, IdentAssignInitVal };
 enum StmtType { LValAssignExp, None, SingleExp, Block, Return, OnlyReturn, OnlyIf, IfElse, While, Break, Continue };
+enum FuncTypeType { Void, Int };
+enum CompUnitType { OnlyFuncDef, CompUnitFuncDef, OnlyDecl, CompUnitDecl };
+enum FuncDefType { NoParams, WithParams };
 
 
 // 所有 AST 的基类
@@ -29,38 +32,94 @@ class BaseAST {
   virtual void dump() const = 0;
 };
 
-class CompUnitAST : public BaseAST {
+class startAST: public BaseAST {
  public:
-  std::unique_ptr<BaseAST> func_def;
+  std::unique_ptr<BaseAST> comp_unit_ast;
 
   void dump() const override{
-    cout << "CompUnitAST { ";
-    func_def->dump();
+    comp_unit_ast->dump();
+  }
+};
+
+class CompUnitAST : public BaseAST {
+ public:
+  vector<BaseAST*> decl_list;
+  vector<BaseAST*> func_def_list;
+
+  void dump() const override{
+    cout << "CompUnit { ";
+    for (auto decl : decl_list) decl->dump();
+    for (auto func_def : func_def_list) func_def->dump();
     cout << " }";
   }
 };
 
 class FuncDefAST : public BaseAST {
  public:
+  FuncDefType type;
   std::unique_ptr<BaseAST> func_type;
   std::unique_ptr<string> ident;
   std::unique_ptr<BaseAST> block;
+  std::unique_ptr<BaseAST> funcfparams;
 
   void dump() const override{
-    cout << "FuncDef { ";
-    func_type->dump();
-    cout << ", " << *ident << ", ";
-    block->dump();
-    cout << " }";
+    if(type == FuncDefType::NoParams){
+      cout << "FuncDef { ";
+      func_type->dump();
+      cout << " " << *ident << " ";
+      block->dump();
+      cout << " }";
+    }
+    if(type == FuncDefType::WithParams){
+      cout << "FuncDef { ";
+      func_type->dump();
+      cout << " " << *ident << " ( ";
+      funcfparams->dump();
+      cout << " ) ";
+      block->dump();
+      cout << " }";
+    }
   }
 };
 
 class FuncTypeAST : public BaseAST {
  public:
-  std::string type;
+  FuncTypeType type;
 
   void dump() const override{
-    cout << "FuncType { " << type << " }";
+    cout << "FuncType { ";
+    if (type == FuncTypeType::Void) cout << "void";
+    if (type == FuncTypeType::Int) cout << "int";
+    cout << " }";
+  }
+};
+
+class FuncFParamsAST : public BaseAST {
+ public:
+  std::vector<BaseAST*> funcfparam_list;
+  std::unique_ptr<BaseAST> funcfparam_ast;
+
+  void dump() const override{
+    cout << "FuncFParams { ";
+    funcfparam_ast->dump();
+    cout << " ";
+    for (auto funcfparam : funcfparam_list) {
+      cout << ", ";
+      funcfparam->dump();
+    }
+    cout << " }";
+  }
+};
+
+class FuncFParamAST : public BaseAST {
+ public:
+  std::unique_ptr<BaseAST> btype_ast;
+  std::unique_ptr<string> ident;
+
+  void dump() const override{
+    cout << "FuncFParam { ";
+    btype_ast->dump();
+    cout << " " << *ident << " }";
   }
 };
 
@@ -196,13 +255,26 @@ class UnaryExpAST: public BaseAST {
     std::unique_ptr<BaseAST> primary_exp_ast;
     std::unique_ptr<string> unary_op;
     std::unique_ptr<BaseAST> unary_exp_ast;
+    std::vector<BaseAST*> funcrparams;
+    std::unique_ptr<string> ident;
   
     void dump() const override{
       if (type == UnaryExpType::PrimaryExp) {
         cout << "UnaryExp { ";
         primary_exp_ast->dump();
         cout << " }";
-      } 
+      }
+      if (type == UnaryExpType::OnlyIdent){
+        cout << "UnaryExp { " << *ident << "() }";
+      }
+      if (type == UnaryExpType::IdentFuncRParams){
+        cout << "UnaryExp { ";
+        cout << *ident << "(";
+        for (auto funcrparam : funcrparams) {
+          funcrparam->dump();
+        }
+        cout << ") }";
+      }
       if (type == UnaryExpType::UnaryOpandUnaryExp){
         cout << "UnaryExp { " << *unary_op << " ";
         unary_exp_ast->dump();
