@@ -9,6 +9,8 @@ using namespace std;
 
 enum PrimaryExpType { Exp, Number };
 enum UnaryExpType { PrimaryExp, UnaryOpandUnaryExp };
+enum MulExpType { UnaryExp, MulExpMulOpUnaryExp };
+enum AddExpType { MulExp, AddExpAddOpMulExp };
 
 // 所有 AST 的基类
 class BaseAST {
@@ -86,11 +88,11 @@ class NumberAST : public BaseAST {
 
 class ExpAST: public BaseAST {
   public:
-    std::unique_ptr<BaseAST> unary_exp_ast;
+    std::unique_ptr<BaseAST> add_exp_ast;
   
     void dump() const override{
       cout << "Exp { ";
-      unary_exp_ast->dump();
+      add_exp_ast->dump();
       cout << " }";
     }
 };
@@ -129,6 +131,52 @@ class UnaryExpAST: public BaseAST {
       } 
       if (type == UnaryExpType::UnaryOpandUnaryExp){
         cout << "UnaryExp { " << *unary_op << " ";
+        unary_exp_ast->dump();
+        cout << " }";
+      }
+    }
+};
+
+class AddExpAST: public BaseAST {
+  public:
+    AddExpType type;
+    std::unique_ptr<BaseAST> mul_exp_ast;
+    std::unique_ptr<string> add_op;
+    std::unique_ptr<BaseAST> add_exp_ast;
+
+    void dump() const override{
+      if (type == AddExpType::MulExp) {
+        cout << "AddExp { ";
+        mul_exp_ast->dump();
+        cout << " }";
+      } 
+      if (type == AddExpType::AddExpAddOpMulExp){
+        cout << "AddExp { ";
+        add_exp_ast->dump();
+        cout << " " << *add_op << " ";
+        mul_exp_ast->dump();
+        cout << " }";
+      }
+    }
+};
+
+class MulExpAST: public BaseAST {
+  public:
+    MulExpType type;
+    std::unique_ptr<BaseAST> mul_exp_ast;
+    std::unique_ptr<string> mul_op;
+    std::unique_ptr<BaseAST> unary_exp_ast;
+    
+    void dump() const override{
+      if (type == MulExpType::UnaryExp) {
+        cout << "MulExp { ";
+        unary_exp_ast->dump();
+        cout << " }";
+      } 
+      if (type == MulExpType::MulExpMulOpUnaryExp){
+        cout << "MulExp { ";
+        mul_exp_ast->dump();
+        cout << " " << *mul_op << " ";
         unary_exp_ast->dump();
         cout << " }";
       }

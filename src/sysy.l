@@ -41,6 +41,11 @@ integer ([1-9]{digit}*)|0
 "+"             { return PLUS; }
 "-"             { return MINUS; }
 "!"             { return NOT; }
+"*"             { return TIMES; }
+"/"             { return DIVIDE; }
+"%"             { return MOD; }
+"=="            { return EQ; }
+"!="            { return NE; }
 
 ";"             { return SEMICOLON; }
 "("             { return LPAREN; }

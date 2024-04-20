@@ -17,7 +17,7 @@ extern int yylex(void);
 // 终结符
 %token INT RETURN CONST VOID IF ELSE WHILE FOR BREAK CONTINUE
 %token SEMICOLON LPAREN RPAREN LBRACE RBRACE
-%token PLUS MINUS NOT
+%token PLUS MINUS NOT TIMES DIVIDE MOD EQ NE
 %token <str_value> IDENT
 %token <int_value> INT_CONST
 
@@ -25,8 +25,8 @@ extern int yylex(void);
 %start CompUnit
 
 // 非终结符
-%type <ast_value> FuncDef FuncType Block Stmt Number Exp PrimaryExp UnaryExp
-%type <str_value> UnaryOp
+%type <ast_value> FuncDef FuncType Block Stmt Number Exp PrimaryExp UnaryExp AddExp MulExp
+%type <str_value> UnaryOp MulOp AddOp
 
 
 %%
@@ -73,9 +73,9 @@ Stmt
   ;
 
 Exp
-  : UnaryExp { 
+  : AddExp { 
     auto ast = new ExpAST();
-    ast->unary_exp_ast = unique_ptr<BaseAST>($1); 
+    ast->add_exp_ast = unique_ptr<BaseAST>($1); 
     $$ = ast;
   }
   ;
@@ -122,6 +122,47 @@ Number
   }
   ;
 
+MulExp
+  : UnaryExp { 
+    auto ast = new MulExpAST();
+    ast->type = MulExpType::UnaryExp;
+    ast->unary_exp_ast = unique_ptr<BaseAST>($1);
+    $$ = ast;
+  } | MulExp MulOp UnaryExp {
+    auto ast = new MulExpAST();
+    ast->type = MulExpType::MulExpMulOpUnaryExp;
+    ast->mul_exp_ast = unique_ptr<BaseAST>($1);
+    ast->mul_op = unique_ptr<string>($2);
+    ast->unary_exp_ast = unique_ptr<BaseAST>($3);
+    $$ = ast;
+  }
+  ;
+
+MulOp
+  : TIMES { $$ = new string("*"); }
+  | DIVIDE { $$ = new string("/"); }
+  | MOD { $$ = new string("%"); }
+
+AddExp
+  : MulExp { 
+    auto ast = new AddExpAST();
+    ast->type = AddExpType::MulExp;
+    ast->mul_exp_ast = unique_ptr<BaseAST>($1);
+    $$ = ast;
+  } | AddExp AddOp MulExp {
+    auto ast = new AddExpAST();
+    ast->type = AddExpType::AddExpAddOpMulExp;
+    ast->add_exp_ast = unique_ptr<BaseAST>($1);
+    ast->add_op = unique_ptr<string>($2);
+    ast->mul_exp_ast = unique_ptr<BaseAST>($3);
+    $$ = ast;
+  }
+  ;
+
+AddOp 
+  : PLUS { $$ = new string("+"); }
+  | MINUS { $$ = new string("-"); }
+  ;
 
 %%
 
