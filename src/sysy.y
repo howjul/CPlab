@@ -73,6 +73,22 @@ Stmt
     ast->lval_ast = unique_ptr<BaseAST>($1);
     ast->exp_ast = unique_ptr<BaseAST>($3);
     $$ = ast;
+  } | SEMICOLON {
+    auto ast = new StmtAST();
+    ast->type = StmtType::None;
+    $$ = ast;
+  } | Exp SEMICOLON{
+    auto ast = new StmtAST();
+    ast->type = StmtType::SingleExp;
+  } | Block {
+    auto ast = new StmtAST();
+    ast->type = StmtType::Block;
+    ast->block_ast = unique_ptr<BaseAST>($1);
+    $$ = ast;
+  } | RETURN SEMICOLON {
+    auto ast = new StmtAST();
+    ast->type = StmtType::OnlyReturn;
+    $$ = ast;
   } | RETURN Exp SEMICOLON {
     auto ast = new StmtAST();
     ast->type = StmtType::Return;

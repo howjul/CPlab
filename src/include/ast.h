@@ -19,7 +19,7 @@ enum LOrExpType { LAndExp, LOrExpOrOpLAndExp };
 enum BlockItemType { Decl, Stmt };
 enum DeclType { ConstDecl, VarDecl };
 enum VarDefType { Ident, IdentAssignInitVal };
-enum StmtType { LValAssignExp, Return };
+enum StmtType { LValAssignExp, None, SingleExp, Block, Return, OnlyReturn };
 
 
 // 所有 AST 的基类
@@ -80,6 +80,7 @@ class StmtAST : public BaseAST {
   StmtType type;
   std::unique_ptr<BaseAST> exp_ast;
   std::unique_ptr<BaseAST> lval_ast;
+  std::unique_ptr<BaseAST> block_ast;
 
   void dump() const override{
     if (type == StmtType::LValAssignExp){
@@ -93,6 +94,22 @@ class StmtAST : public BaseAST {
       cout << "Stmt { return ";
       exp_ast->dump();
       cout << "; }";
+    }
+    if (type == StmtType::None){
+      cout << "Stmt { ; }";
+    }
+    if (type == StmtType::SingleExp){
+      cout << "Stmt { ";
+      exp_ast->dump();
+      cout << " }";
+    }
+    if (type == StmtType::Block){
+      cout << "Stmt { ";
+      block_ast->dump();
+      cout << " }";
+    }
+    if (type == StmtType::OnlyReturn){
+      cout << "Stmt { return; }";
     }
   }
 };
