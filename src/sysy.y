@@ -14,6 +14,7 @@ extern int yylex(void);
     std::string* str_value;
     BaseAST* ast_value;
     std::vector<BaseAST*>* ast_list;
+    std::vector<string>* str_list;
 }
 
 // 终结符
@@ -30,6 +31,7 @@ extern int yylex(void);
 %type <ast_value> FuncDef Type Block Stmt Number Exp PrimaryExp UnaryExp AddExp MulExp LOrExp LAndExp EqExp RelExp Decl BlockItem LVal VarDecl VarDef InitVal FuncFParams FuncFParam CompUnit CompUnitList
 %type <ast_list> BlockItemList VarDefList FuncFParamList FuncRParams
 %type <str_value> UnaryOp MulOp AddOp RelOp EqOp
+%type <str_list> ArrayDimList
 
 %%
 CompUnit
@@ -115,7 +117,26 @@ FuncFParam
       auto type_ast = new TypeAST();
       type_ast->type = TypeType::Int;
       ast->btype = type_ast;
+      ast->type = FuncFParamType::Var;
       ast->ident = unique_ptr<string>($2);
+      $$ = ast;
+    } | INT IDENT LBRACKET RBRACKET {
+      auto ast = new FuncFParamAST();
+      auto type_ast = new TypeAST();
+      type_ast->type = TypeType::Int;
+      ast->btype = type_ast;
+      ast->type = FuncFParamType::Array;
+      ast->ident = unique_ptr<string>($2);
+      ast->array = new std::vector<string>;
+      $$ = ast;
+    } | INT IDENT LBRACKET RBRACKET ArrayDimList{
+      auto ast = new FuncFParamAST();
+      auto type_ast = new TypeAST();
+      type_ast->type = TypeType::Int;
+      ast->btype = type_ast;
+      ast->type = FuncFParamType::Array;
+      ast->ident = unique_ptr<string>($2);
+      ast->array = $5;
       $$ = ast;
     }
 
@@ -499,6 +520,23 @@ VarDef
     ast->ident = unique_ptr<string>($1);
     ast->init_val_ast = unique_ptr<BaseAST>($3);
     $$ = ast;
+  } | IDENT ArrayDimList {
+    auto ast = new VarDefAST();
+    ast->type = VarDefType::InitArray;
+    ast->ident = unique_ptr<string>($1);
+    ast->init_array = $2;
+    $$ = ast;
+  } 
+
+ArrayDimList
+  : LBRACKET INT_CONST RBRACKET {
+    auto array_dim_list = new vector<string>;
+    array_dim_list->push_back(to_string($2));
+    $$ = array_dim_list;
+  } | ArrayDimList LBRACKET INT_CONST RBRACKET {
+    auto array_dim_list = $1;
+    array_dim_list->push_back(to_string($3));
+    $$ = array_dim_list;
   }
 
 InitVal

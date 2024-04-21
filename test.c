@@ -1,7 +1,7 @@
 int var;
 
-int one = 1;
+int one;
 
-int main() {
+int main(int argc[][2][3], int arge) {
   return var + one;
 }

@@ -18,10 +18,11 @@ enum LAndExpType { EqExp, LAndExpAndOpEqExp };
 enum LOrExpType { LAndExp, LOrExpOrOpLAndExp };
 enum BlockItemType { Decl, Stmt };
 enum DeclType { ConstDecl, VarDecl };
-enum VarDefType { Ident, IdentAssignInitVal };
+enum VarDefType { Ident, IdentAssignInitVal, InitArray };
 enum StmtType { LValAssignExp, None, SingleExp, Block, Return, OnlyReturn, OnlyIf, IfElse, While, Break, Continue };
 enum TypeType { Void, Int };
 enum FuncDefType { NoParams, WithParams };
+enum FuncFParamType { Var, Array };
 
 
 // 所有 AST 的基类
@@ -110,13 +111,20 @@ class FuncFParamsAST : public BaseAST {
 
 class FuncFParamAST : public BaseAST {
  public:
+  FuncFParamType type;
   BaseAST* btype;
   std::unique_ptr<string> ident;
+  vector<string>* array;
 
   void dump() const override{
-    cout << "FuncFParam { ";
     btype->dump();
-    cout << " " << *ident << " }";
+    cout << " " << *ident << " ";
+    if(type == FuncFParamType::Array){
+      cout << "[]";
+      for (auto i : *array){
+        cout << "[" << i << "]";
+      }
+    }
   }
 };
 
@@ -530,6 +538,7 @@ class VarDefAST : public BaseAST {
   VarDefType type;
   std::unique_ptr<string> ident;
   std::unique_ptr<BaseAST> init_val_ast;
+  std::vector<string>* init_array;
 
   void dump() const override{
     if (type == VarDefType::Ident){
@@ -542,6 +551,14 @@ class VarDefAST : public BaseAST {
       cout << *ident;
       cout << " = ";
       init_val_ast->dump();
+      cout << " }";
+    }
+    if (type == VarDefType::InitArray){
+      cout << "VarDef { ";
+      cout << *ident;
+      for (auto i : *init_array){
+        cout << "[" << i << "] ";
+      }
       cout << " }";
     }
   }
