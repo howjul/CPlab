@@ -29,7 +29,6 @@ integer ([1-9]{digit}*)|0
 
 
 "int"           { return INT; }
-"const"         { return CONST; }
 "void"          { return VOID; }
 "if"            { return IF; }
 "else"          { return ELSE; }
@@ -60,6 +59,8 @@ integer ([1-9]{digit}*)|0
 ")"             { return RPAREN; }
 "{"             { return LBRACE; }
 "}"             { return RBRACE; }
+"["             { return LBRACKET; }
+"]"             { return RBRACKET; }
 
 {integer}       { yylval.int_value = atoi(yytext);   return INT_CONST; }
 {Identifier}    { yylval.str_value = new string(yytext); return IDENT; }

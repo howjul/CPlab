@@ -17,8 +17,8 @@ extern int yylex(void);
 }
 
 // 终结符
-%token INT RETURN CONST VOID IF ELSE WHILE BREAK CONTINUE
-%token SEMICOLON LPAREN RPAREN LBRACE RBRACE COMMA
+%token INT RETURN VOID IF ELSE WHILE BREAK CONTINUE
+%token SEMICOLON LPAREN RPAREN LBRACE RBRACE COMMA LBRACKET RBRACKET
 %token PLUS MINUS NOT TIMES DIVIDE MOD EQ NE GT GE LT LE AND OR ASSIGN
 %token <str_value> IDENT
 %token <int_value> INT_CONST
@@ -27,8 +27,8 @@ extern int yylex(void);
 /* %start CompUnit */
 
 // 非终结符
-%type <ast_value> FuncDef Type Block Stmt Number Exp PrimaryExp UnaryExp AddExp MulExp LOrExp LAndExp EqExp RelExp Decl ConstDecl ConstDef ConstInitVal ConstExp BlockItem LVal VarDecl VarDef InitVal FuncFParams FuncFParam CompUnit CompUnitList
-%type <ast_list> ConstDefList BlockItemList VarDefList FuncFParamList FuncRParams
+%type <ast_value> FuncDef Type Block Stmt Number Exp PrimaryExp UnaryExp AddExp MulExp LOrExp LAndExp EqExp RelExp Decl BlockItem LVal VarDecl VarDef InitVal FuncFParams FuncFParam CompUnit CompUnitList
+%type <ast_list> BlockItemList VarDefList FuncFParamList FuncRParams
 %type <str_value> UnaryOp MulOp AddOp RelOp EqOp
 
 %%
@@ -382,6 +382,13 @@ LOrExp
   ;
 
 Decl
+  : VarDecl {
+    auto ast = new DeclAST();
+    ast->decl_ast = unique_ptr<BaseAST>($1);
+    $$ = ast;
+  }
+
+/* Decl
   : ConstDecl { 
     auto ast = new DeclAST();
     ast->decl_ast = unique_ptr<BaseAST>($1);
@@ -390,9 +397,9 @@ Decl
     auto ast = new DeclAST();
     ast->decl_ast = unique_ptr<BaseAST>($1);
     $$ = ast;
-  }
+  } */
 
-ConstDefList
+/* ConstDefList
   : {
     auto const_def_list = new std::vector<BaseAST*>;
     $$ = const_def_list;
@@ -424,7 +431,7 @@ ConstInitVal
     auto ast = new ConstInitValAST();
     ast->const_exp_ast = unique_ptr<BaseAST>($1);
     $$ = ast;
-  }
+  } */
 
 BlockItemList
   : {
@@ -455,12 +462,12 @@ LVal
     $$ = ast;
   }
 
-ConstExp
+/* ConstExp
   : Exp {
     auto ast = new ConstExpAST();
     ast->exp_ast = unique_ptr<BaseAST>($1);
     $$ = ast;
-  }
+  } */
 
 VarDefList
   : {

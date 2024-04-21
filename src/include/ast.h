@@ -429,60 +429,60 @@ class DeclAST : public BaseAST {
   }
 };
 
-class ConstDeclAST : public BaseAST {
- public:
-  std::vector<BaseAST*> const_def_list;
-  std::unique_ptr<BaseAST> const_def_ast;
-  std::unique_ptr<BaseAST> btype_ast;
+// class ConstDeclAST : public BaseAST {
+//  public:
+//   std::vector<BaseAST*> const_def_list;
+//   std::unique_ptr<BaseAST> const_def_ast;
+//   std::unique_ptr<BaseAST> btype_ast;
 
-  void dump() const override{
-    cout << "ConstDecl { const ";
-    btype_ast->dump();
-    const_def_ast->dump();
-    cout << " ";
-    for (auto const_def : const_def_list) {
-      cout << ", ";
-      const_def->dump();
-    }
-    cout << " ;";
-    cout << " }";
-  }
-};
+//   void dump() const override{
+//     cout << "ConstDecl { const ";
+//     btype_ast->dump();
+//     const_def_ast->dump();
+//     cout << " ";
+//     for (auto const_def : const_def_list) {
+//       cout << ", ";
+//       const_def->dump();
+//     }
+//     cout << " ;";
+//     cout << " }";
+//   }
+// };
 
-class ConstDefAST : public BaseAST {
- public:
-  std::unique_ptr<string> ident;
-  std::unique_ptr<BaseAST> const_init_val_ast;
+// class ConstDefAST : public BaseAST {
+//  public:
+//   std::unique_ptr<string> ident;
+//   std::unique_ptr<BaseAST> const_init_val_ast;
 
-  void dump() const override{
-    cout << "ConstDef { ";
-    cout << *ident << " = ";
-    const_init_val_ast->dump();
-    cout << " }";
-  }
-};
+//   void dump() const override{
+//     cout << "ConstDef { ";
+//     cout << *ident << " = ";
+//     const_init_val_ast->dump();
+//     cout << " }";
+//   }
+// };
 
-class ConstInitValAST : public BaseAST {
- public:
-  std::unique_ptr<BaseAST> const_exp_ast;
+// class ConstInitValAST : public BaseAST {
+//  public:
+//   std::unique_ptr<BaseAST> const_exp_ast;
 
-  void dump() const override{
-    cout << "ConstInitVal { ";
-    const_exp_ast->dump();
-    cout << " }";
-  }
-};
+//   void dump() const override{
+//     cout << "ConstInitVal { ";
+//     const_exp_ast->dump();
+//     cout << " }";
+//   }
+// };
 
-class ConstExpAST : public BaseAST{
-  public:
-    std::unique_ptr<BaseAST> exp_ast;
+// class ConstExpAST : public BaseAST{
+//   public:
+//     std::unique_ptr<BaseAST> exp_ast;
 
-  void dump() const override{
-    cout << "ConstExp { ";
-    exp_ast->dump();
-    cout << " }";
-  }
-};
+//   void dump() const override{
+//     cout << "ConstExp { ";
+//     exp_ast->dump();
+//     cout << " }";
+//   }
+// };
 
 class BlockItemAST : public BaseAST{
   public:
