@@ -20,8 +20,7 @@ enum BlockItemType { Decl, Stmt };
 enum DeclType { ConstDecl, VarDecl };
 enum VarDefType { Ident, IdentAssignInitVal };
 enum StmtType { LValAssignExp, None, SingleExp, Block, Return, OnlyReturn, OnlyIf, IfElse, While, Break, Continue };
-enum FuncTypeType { Void, Int };
-enum CompUnitType { OnlyFuncDef, CompUnitFuncDef, OnlyDecl, CompUnitDecl };
+enum TypeType { Void, Int };
 enum FuncDefType { NoParams, WithParams };
 
 
@@ -82,15 +81,13 @@ class FuncDefAST : public BaseAST {
   }
 };
 
-class FuncTypeAST : public BaseAST {
+class TypeAST : public BaseAST {
  public:
-  FuncTypeType type;
+  TypeType type;
 
   void dump() const override{
-    cout << "FuncType { ";
-    if (type == FuncTypeType::Void) cout << "void";
-    if (type == FuncTypeType::Int) cout << "int";
-    cout << " }";
+    if (type == TypeType::Void) cout << "void";
+    if (type == TypeType::Int) cout << "int";
   }
 };
 
@@ -113,12 +110,12 @@ class FuncFParamsAST : public BaseAST {
 
 class FuncFParamAST : public BaseAST {
  public:
-  std::unique_ptr<BaseAST> btype_ast;
+  BaseAST* btype;
   std::unique_ptr<string> ident;
 
   void dump() const override{
     cout << "FuncFParam { ";
-    btype_ast->dump();
+    btype->dump();
     cout << " " << *ident << " }";
   }
 };
@@ -449,15 +446,6 @@ class ConstDeclAST : public BaseAST {
     }
     cout << " ;";
     cout << " }";
-  }
-};
-
-class BTypeAST : public BaseAST {
- public:
-  std::unique_ptr<string> btype;
-
-  void dump() const override{
-    cout << "Btype { " << *btype << " }";
   }
 };
 

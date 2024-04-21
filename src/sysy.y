@@ -27,7 +27,7 @@ extern int yylex(void);
 /* %start CompUnit */
 
 // 非终结符
-%type <ast_value> FuncDef FuncType Block Stmt Number Exp PrimaryExp UnaryExp AddExp MulExp LOrExp LAndExp EqExp RelExp Decl ConstDecl BType ConstDef ConstInitVal ConstExp BlockItem LVal VarDecl VarDef InitVal FuncFParams FuncFParam CompUnit CompUnitList
+%type <ast_value> FuncDef Type Block Stmt Number Exp PrimaryExp UnaryExp AddExp MulExp LOrExp LAndExp EqExp RelExp Decl ConstDecl ConstDef ConstInitVal ConstExp BlockItem LVal VarDecl VarDef InitVal FuncFParams FuncFParam CompUnit CompUnitList
 %type <ast_list> ConstDefList BlockItemList VarDefList FuncFParamList FuncRParams
 %type <str_value> UnaryOp MulOp AddOp RelOp EqOp
 
@@ -41,7 +41,15 @@ CompUnit
   ;
 
 CompUnitList
-    : FuncDef {
+    : Decl {
+      auto compunit = new CompUnitAST();
+      compunit->decl_list.push_back($1);
+      $$ = compunit;
+    } | CompUnitList Decl {
+      auto compunit = (CompUnitAST*)$1;
+      compunit->decl_list.push_back($2);
+      $$ = compunit;
+    } | FuncDef {
       auto compunit = new CompUnitAST();
       compunit->func_def_list.push_back($1);
       $$ = compunit;
@@ -49,18 +57,18 @@ CompUnitList
       auto compunit = (CompUnitAST*)$1;
       compunit->func_def_list.push_back($2);
       $$ = compunit;
-    }
+    } 
     ;
 
 FuncDef
-    : FuncType IDENT LPAREN RPAREN Block { 
+    : Type IDENT LPAREN RPAREN Block { 
       auto ast = new FuncDefAST();
       ast->type = FuncDefType::NoParams;
       ast->func_type = unique_ptr<BaseAST>($1);
       ast->ident = unique_ptr<string>($2);
       ast->block = unique_ptr<BaseAST>($5);
       $$ = ast;
-    } | FuncType IDENT LPAREN FuncFParams RPAREN Block{
+    } | Type IDENT LPAREN FuncFParams RPAREN Block{
       auto ast = new FuncDefAST();
       ast->type = FuncDefType::WithParams;
       ast->func_type = unique_ptr<BaseAST>($1);
@@ -71,14 +79,14 @@ FuncDef
     }
     ;
 
-FuncType
+Type
     : INT { 
-      auto ast = new FuncTypeAST();
-      ast->type = FuncTypeType::Int;
+      auto ast = new TypeAST();
+      ast->type = TypeType::Int;
       $$ = ast;
     } | VOID {
-      auto ast = new FuncTypeAST();
-      ast->type = FuncTypeType::Void;
+      auto ast = new TypeAST();
+      ast->type = TypeType::Void;
       $$ = ast;
     }
     ;
@@ -102,9 +110,11 @@ FuncFParamList
     }
 
 FuncFParam
-    : BType IDENT {
+    : INT IDENT {
       auto ast = new FuncFParamAST();
-      ast->btype_ast = unique_ptr<BaseAST>($1);
+      auto type_ast = new TypeAST();
+      type_ast->type = TypeType::Int;
+      ast->btype = type_ast;
       ast->ident = unique_ptr<string>($2);
       $$ = ast;
     }
@@ -393,21 +403,13 @@ ConstDefList
   }
 
 ConstDecl
-  : CONST BType ConstDef ConstDefList SEMICOLON {
+  : CONST Type ConstDef ConstDefList SEMICOLON {
     auto ast = new ConstDeclAST();
     ast->btype_ast = unique_ptr<BaseAST>($2);
     ast->const_def_ast = unique_ptr<BaseAST>($3);
     ast->const_def_list = *($4);
     $$ = ast;
   }
-
-BType
-  : INT { 
-    auto ast = new BTypeAST();
-    ast->btype = std::make_unique<string>("int");
-    $$ = ast;
-  }
-  ;
 
 ConstDef
   : IDENT ASSIGN ConstInitVal {
@@ -471,7 +473,7 @@ VarDefList
   }
 
 VarDecl
-  : BType VarDef VarDefList SEMICOLON {
+  : Type VarDef VarDefList SEMICOLON {
     auto ast = new VarDeclAST();
     ast->btype_ast = unique_ptr<BaseAST>($1);
     ast->var_def_ast = unique_ptr<BaseAST>($2);
