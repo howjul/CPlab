@@ -23,6 +23,7 @@ enum StmtType { LValAssignExp, None, SingleExp, Block, Return, OnlyReturn, OnlyI
 enum TypeType { Void, Int };
 enum FuncDefType { NoParams, WithParams };
 enum FuncFParamType { Var, Array };
+enum LValType { _Ident, _Array };
 
 
 // 所有 AST 的基类
@@ -506,10 +507,23 @@ class BlockItemAST : public BaseAST{
 
 class LValAST : public BaseAST {
   public:
+    LValType type;
     std::unique_ptr<string> ident;
+    std::vector<BaseAST*> exp_list;
 
     void dump() const override{
-      cout << "LVal { " << *ident << " }";
+      if (type == LValType::_Ident){
+        cout << "LVal { " << *ident << " }";
+      }
+      if (type == LValType::_Array){
+        cout << "LVal { " << *ident << " ";
+        for (auto exp : exp_list){
+          cout << "[";
+          exp->dump();
+          cout << "]";
+        }
+        cout << " }";
+      }
     }
 };
 

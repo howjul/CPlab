@@ -29,7 +29,7 @@ extern int yylex(void);
 
 // 非终结符
 %type <ast_value> FuncDef Type Block Stmt Number Exp PrimaryExp UnaryExp AddExp MulExp LOrExp LAndExp EqExp RelExp Decl BlockItem LVal VarDecl VarDef InitVal FuncFParams FuncFParam CompUnit CompUnitList
-%type <ast_list> BlockItemList VarDefList FuncFParamList FuncRParams
+%type <ast_list> BlockItemList VarDefList FuncFParamList FuncRParams ExpList
 %type <str_value> UnaryOp MulOp AddOp RelOp EqOp
 %type <str_list> ArrayDimList
 
@@ -481,6 +481,22 @@ LVal
     auto ast = new LValAST();
     ast->ident = unique_ptr<string>($1);
     $$ = ast;
+  } | IDENT ExpList {
+    auto ast = new LValAST();
+    ast->ident = unique_ptr<string>($1);
+    ast->exp_list = *($2);
+    $$ = ast;
+  }
+
+ExpList
+  : LBRACKET Exp RBRACKET {
+    auto exp_list = new vector<BaseAST*>;
+    exp_list->push_back($2);
+    $$ = exp_list;
+  } | ExpList LBRACKET Exp RBRACKET {
+    auto exp_list = $1;
+    exp_list->push_back($3);
+    $$ = exp_list;
   }
 
 /* ConstExp
@@ -505,6 +521,7 @@ VarDecl
     auto ast = new VarDeclAST();
     ast->btype_ast = unique_ptr<BaseAST>($1);
     ast->var_def_ast = unique_ptr<BaseAST>($2);
+    ast->var_def_list = *($3);
     $$ = ast;
   }
 
